@@ -9,7 +9,7 @@ export const GARDEN_TOOL_SCHEMA = {
     properties: {
       action: { type:"string", enum:["open","status","admire","water","loosen","prune","collection","achievements","plants","plant"] },
       plantId: { type:"string", description:"plant 时要培育的品种 id" },
-      targetPlantId: { type:"string", description:"admire 时要赏的已栽成品种 id；不填则默认当前植物" }
+      targetPlantId: { type:"string", description:"admire 时要赏的品种 id；不填则优先赏当前植物，若当前没有正在培育的植物，则赏最近栽成的一株" }
     },
     required:["action"]
   }

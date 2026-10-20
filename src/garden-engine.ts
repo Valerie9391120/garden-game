@@ -51,6 +51,13 @@ export class GardenEngine {
     return this.store.update(async loaded=>{
       const state = loaded ? structuredClone(loaded) : cloneDefault();
       const today = this.clock.today();
+      // Daily care flags are only meaningful for the current calendar day.
+      // Clearing stale flags here keeps status text truthful and preserves the
+      // one-valid-care-action-per-day rule across restarts and devices.
+      if (state.todayCareDate && state.todayCareDate !== today) {
+        state.todayCareDate=undefined;
+        state.todayCareAction=undefined;
+      }
       const events:string[]=[];
       let text="";
       let ctx:any={ today };
@@ -89,13 +96,14 @@ export class GardenEngine {
           state.currentPlant=cmd.plantId;
           state.currentPlantStartedAt=today;
           state.careDays=0;
+          ctx.startedPlant=cmd.plantId;
           ctx.replanted=h.deaths>0?cmd.plantId:undefined;
           text=h.deaths>0
             ? `你将${PLANTS[cmd.plantId].displayName}重新安置妥当。新的培育由今日开始。`
             : `你将${PLANTS[cmd.plantId].displayName}安置妥当。新的培育由今日开始。`;
         }
       } else if (cmd.action==="admire") {
-        const target=cmd.targetPlantId ?? state.currentPlant;
+        const target=cmd.targetPlantId ?? state.currentPlant ?? state.completedPlants[state.completedPlants.length-1];
         if (!target || !PLANTS[target]) {
           text="庭中尚无可赏之花。";
         } else if (target===state.currentPlant && state.careDays<30) {
@@ -142,7 +150,9 @@ export class GardenEngine {
           state.stats.bestCareStreak=Math.max(state.stats.bestCareStreak,state.stats.consecutiveCareDays);
           state.stats.lastCareDate=today;
 
-          const died = state.careDays<=30 && this.rng()<DEATH_PROBABILITY;
+          // The 30th valid care action is the guaranteed first bloom.
+          // Accidental withering is only rolled on care days 1–29.
+          const died = state.careDays<30 && this.rng()<DEATH_PROBABILITY;
           if (died) {
             const h=historyOf(state,state.currentPlant);
             h.deaths+=1;

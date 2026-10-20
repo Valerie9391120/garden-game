@@ -5,7 +5,7 @@ export interface AchievementDefinition {
   id: string;
   name: string;
   description: string;
-  check: (state: GardenState, ctx?: { justCompleted?: PlantId; justAdmired?: PlantId; justDied?: PlantId; replanted?: PlantId; today?: string }) => boolean;
+  check: (state: GardenState, ctx?: { justCompleted?: PlantId; justAdmired?: PlantId; justDied?: PlantId; replanted?: PlantId; startedPlant?: PlantId; today?: string }) => boolean;
 }
 
 const familiesAdmired = (state: GardenState) => {
@@ -40,7 +40,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id:"admire_bloom_day", name:"惜取眼前", description:"在一株植物开花后的当天赏花。", check:(s,ctx)=>Boolean(ctx?.justAdmired && s.lastBloomEventPlant===ctx.justAdmired && s.lastBloomEventDate===ctx.today) },
   { id:"replant_after_death", name:"旧地重栽", description:"某一品种意外凋谢后，再次选择培育同一品种。", check:(_s,ctx)=>Boolean(ctx?.replanted) },
   { id:"bloom_after_death", name:"春风又度", description:"曾经意外凋谢的品种重新培育成功。", check:(s,ctx)=>Boolean(ctx?.justCompleted && (s.plantHistory[ctx.justCompleted]?.deaths ?? 0)>0) },
-  { id:"keep_going_after_2_deaths", name:"未肯轻弃", description:"累计经历 2 次意外凋谢后，仍再次开始新的培育。", check:(s,ctx)=>s.stats.deaths>=2&&Boolean(ctx?.replanted) },
+  { id:"keep_going_after_2_deaths", name:"未肯轻弃", description:"累计经历 2 次意外凋谢后，仍再次开始新的培育。", check:(s,ctx)=>s.stats.deaths>=2&&Boolean(ctx?.startedPlant) },
   { id:"admire_all_12", name:"十二花事", description:"十二种植物均至少赏花一次。", check:s=>Object.values(s.plantHistory).filter(Boolean).every(()=>true) && Object.values(PLANTS).every(p=>(s.plantHistory[p.id]?.admireCount??0)>0) },
   { id:"admire_all_families", name:"各有其芳", description:"分别赏过牡丹、梅、海棠、兰、杜鹃、茶花、桂、月季、水仙、菊、木槿。", check:s=>familiesAdmired(s).size>=11 },
   { id:"care_100", name:"手熟花知", description:"累计完成 100 次照料。", check:s=>s.stats.totalCare>=100 },
